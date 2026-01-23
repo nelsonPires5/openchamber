@@ -325,8 +325,6 @@ html:not(.dark) .chat-scroll {
 .overlay-scrollbar-target {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
 }
 
 .overlay-scrollbar-target::-webkit-scrollbar {
