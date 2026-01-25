@@ -4,9 +4,9 @@ import {
     RiAddCircleLine,
     RiAiAgentLine,
     RiAttachment2,
-    RiCloseCircleLine,
     RiFileUploadLine,
     RiSendPlane2Line,
+    RiStopFill,
 } from '@remixicon/react';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useConfigStore } from '@/stores/useConfigStore';
@@ -14,6 +14,7 @@ import { useUIStore } from '@/stores/useUIStore';
 import { useMessageQueueStore, type QueuedMessage } from '@/stores/messageQueueStore';
 import type { AttachedFile, EditPermissionMode } from '@/stores/types/sessionTypes';
 import { getEditModeColors } from '@/lib/permissions/editModeColors';
+import { getAgentColor } from '@/lib/agentColors';
 import { AttachedFilesList } from './FileAttachment';
 import { QueuedMessageChips } from './QueuedMessageChips';
 import { FileMentionAutocomplete, type FileMentionHandle } from './FileMentionAutocomplete';
@@ -1171,8 +1172,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onOpenSettings, scrollToBo
     const footerGapClass = 'gap-x-1.5 gap-y-0';
     const isVSCode = isVSCodeRuntime();
     const footerPaddingClass = isMobile ? 'px-1.5 py-1.5' : (isVSCode ? 'px-1.5 py-1' : 'px-2.5 py-1.5');
-    const footerHeightClass = isMobile ? 'h-9 w-9' : (isVSCode ? 'h-[22px] w-[22px]' : 'h-7 w-7');
-    const iconSizeClass = isMobile ? 'h-5 w-5' : (isVSCode ? 'h-4 w-4' : 'h-[18px] w-[18px]');
+    const footerHeightClass = isMobile ? 'size-9' : (isVSCode ? 'size-[22px]' : 'size-7');
+    const iconSizeClass = isMobile ? 'size-5' : (isVSCode ? 'size-4' : 'size-[18px]');
 
     const iconButtonBaseClass = cn(
         footerHeightClass,
@@ -1188,11 +1189,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onOpenSettings, scrollToBo
             onClick={handleAbort}
             className={cn(
                 iconButtonBaseClass,
-                'text-[var(--status-error)] hover:text-[var(--status-error)]'
+                'text-primary hover:text-primary/80'
             )}
             aria-label='Stop generating'
         >
-            <RiCloseCircleLine className={cn(iconSizeClass)} />
+            <RiStopFill className={cn(iconSizeClass)} />
         </button>
     ) : (
         <button
@@ -1424,6 +1425,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onOpenSettings, scrollToBo
                     )}
                     style={chatInputWrapperStyle}
                 >
+                    <div
+                        className={cn(
+                            'absolute inset-0 pointer-events-none rounded-[inherit]',
+                            working.isWorking && !working.isWaitingForPermission && 'border-2 animate-input-border-pulse',
+                            working.isWaitingForPermission && 'border-2 border-[var(--status-warning)] opacity-80'
+                        )}
+                        style={{
+                            borderColor:
+                                working.isWorking && !working.isWaitingForPermission && currentAgentName
+                                    ? `var(${getAgentColor(currentAgentName).var})`
+                                    : undefined,
+                        }}
+                    />
                         {}
                     {showCommandAutocomplete && (
                         <CommandAutocomplete
