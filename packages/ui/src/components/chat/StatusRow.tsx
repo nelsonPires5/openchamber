@@ -1,5 +1,5 @@
 import React from "react";
-import { RiArrowUpSLine, RiArrowDownSLine, RiCloseCircleLine } from "@remixicon/react";
+import { RiArrowUpSLine, RiArrowDownSLine, RiCloseCircleLine, RiStopFill } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 import { useTodoStore, type TodoItem, type TodoStatus } from "@/stores/useTodoStore";
 import { useSessionStore } from "@/stores/useSessionStore";
@@ -163,10 +163,10 @@ export const StatusRow: React.FC<StatusRowProps> = ({
     <button
       type="button"
       onClick={onAbort}
-      className="flex items-center justify-center h-[1.2rem] w-[1.2rem] text-[var(--status-error)] transition-opacity hover:opacity-80 focus-visible:outline-none flex-shrink-0"
+      className="flex items-center justify-center size-[1.2rem] text-primary transition-opacity hover:opacity-80 focus-visible:outline-none flex-shrink-0"
       aria-label="Stop generating"
     >
-      <RiCloseCircleLine size={18} aria-hidden="true" />
+      <RiStopFill size={18} aria-hidden="true" />
     </button>
   ) : null;
 
@@ -189,9 +189,9 @@ export const StatusRow: React.FC<StatusRowProps> = ({
         {progress.completed}/{progress.total}
       </span>
       {isExpanded ? (
-        <RiArrowUpSLine className="h-3.5 w-3.5" />
+        <RiArrowUpSLine className="size-3.5" />
       ) : (
-        <RiArrowDownSLine className="h-3.5 w-3.5" />
+        <RiArrowDownSLine className="size-3.5" />
       )}
     </button>
   ) : null;
