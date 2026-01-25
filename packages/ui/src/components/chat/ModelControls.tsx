@@ -314,7 +314,7 @@ export const ModelControls: React.FC<ModelControlsProps> = ({ className }) => {
     const isVSCodeRuntime = useIsVSCodeRuntime();
     // Only use mobile panels on actual mobile devices, VSCode uses desktop dropdowns
     const isCompact = isMobile;
-    const [activeMobilePanel, setActiveMobilePanel] = React.useState<'model' | 'agent' | 'variant' | null>(null);
+    const [activeMobilePanel, setActiveMobilePanel] = React.useState<'model' | 'agent' | 'variant' | 'unified' | null>(null);
     const [mobileTooltipOpen, setMobileTooltipOpen] = React.useState<'model' | 'agent' | null>(null);
     const [mobileModelQuery, setMobileModelQuery] = React.useState('');
     const closeMobilePanel = React.useCallback(() => setActiveMobilePanel(null), []);
@@ -1152,6 +1152,233 @@ export const ModelControls: React.FC<ModelControlsProps> = ({ className }) => {
                                 <span className="typography-meta text-muted-foreground/80">Release</span>
                                 <span className="typography-meta font-medium text-foreground">{formatDate(currentMetadata?.release_date)}</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </MobileOverlayPanel>
+        );
+    };
+
+    const renderUnifiedMobileTrigger = () => {
+        if (!isMobile) return null;
+
+        return (
+            <button
+                type="button"
+                onClick={() => setActiveMobilePanel('unified')}
+                className={cn(
+                    'flex items-center gap-1.5 min-w-0 focus:outline-none',
+                    'cursor-pointer hover:opacity-70 transition-opacity',
+                    buttonHeight
+                )}
+                aria-label={`Settings. Agent: ${currentAgentName}, Model: ${getCurrentModelDisplayName()}`}
+            >
+                <div className="relative flex items-center justify-center">
+                    <RiAiAgentLine
+                        className={cn(controlIconSize, 'flex-shrink-0')}
+                        style={currentAgentName ? { color: `var(${getAgentColor(currentAgentName).var})` } : undefined}
+                    />
+                    {currentProviderId && (
+                        <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-[1px] shadow-sm">
+                            <ProviderLogo
+                                providerId={currentProviderId}
+                                className="size-2.5"
+                            />
+                        </div>
+                    )}
+                </div>
+            </button>
+        );
+    };
+
+    const renderUnifiedMobilePanel = () => {
+        if (!isMobile) return null;
+
+        return (
+            <MobileOverlayPanel
+                open={activeMobilePanel === 'unified'}
+                onClose={closeMobilePanel}
+                title="Chat Settings"
+            >
+                <div className="flex flex-col gap-4 pb-4">
+                    {/* Agent Selection */}
+                    <div className="flex flex-col gap-2">
+                        <span className="typography-ui-label text-muted-foreground">Agent</span>
+                        <div className="grid grid-cols-2 gap-2">
+                            {agents.filter(agent => isPrimaryMode(agent.mode)).map((agent) => {
+                                const isSelected = currentAgentName === agent.name;
+                                const agentColor = getAgentColor(agent.name);
+                                return (
+                                    <button
+                                        key={agent.name}
+                                        type="button"
+                                        onClick={() => handleAgentChange(agent.name)}
+                                        className={cn(
+                                            "flex items-center gap-2 p-2 rounded-lg border text-left transition-colors",
+                                            isSelected 
+                                                ? "bg-secondary/50 border-primary/20" 
+                                                : "bg-sidebar/30 border-border/40 hover:bg-sidebar/50"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            'h-2 w-2 rounded-full flex-shrink-0',
+                                            agentColor.class
+                                        )} />
+                                        <span className={cn(
+                                            "typography-meta font-medium truncate",
+                                            isSelected ? "text-foreground" : "text-muted-foreground"
+                                        )}>
+                                            {capitalizeAgentName(agent.name)}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Model Selection */}
+                    <div className="flex flex-col gap-2">
+                        <span className="typography-ui-label text-muted-foreground">Model</span>
+                        <div className="rounded-xl border border-border/40 bg-sidebar/30 overflow-hidden">
+                             {/* Reuse existing model panel logic roughly, but inline */}
+                             <div className="p-2 border-b border-border/40">
+                                <div className="relative">
+                                    <RiSearchLine className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                    <Input
+                                        value={mobileModelQuery}
+                                        onChange={(event) => setMobileModelQuery(event.target.value)}
+                                        placeholder="Search models..."
+                                        className="pl-7 h-9 rounded-lg border-border/40 bg-background/50 typography-meta"
+                                    />
+                                </div>
+                             </div>
+                             <div className="max-h-[200px] overflow-y-auto">
+                                 {/* Just render the filtered list here re-using logic from renderMobileModelPanel 
+                                     Since renderMobileModelPanel has complex logic, I might want to extract it or copy it.
+                                     For now, I'll invoke a slightly modified version or just call renderMobileModelPanel's content logic.
+                                     Actually, let's keep it simple: renderMobileModelPanel is huge. 
+                                     Let's just use a button that opens the dedicated model panel for now?
+                                     Or inline it. Inlining is better for "unified".
+                                 */}
+                                 {(() => {
+                                     // Re-using the filter logic
+                                     const normalizedQuery = mobileModelQuery.trim();
+                                     const filteredProviders = providers
+                                        .map((provider) => {
+                                            const providerModels = Array.isArray(provider.models) ? provider.models : [];
+                                            const matchesProvider = normalizedQuery.length === 0
+                                                ? true
+                                                : fuzzyMatch(provider.name, normalizedQuery) || fuzzyMatch(provider.id, normalizedQuery);
+                                            const matchingModels = normalizedQuery.length === 0
+                                                ? providerModels
+                                                : providerModels.filter((model: ProviderModel) => {
+                                                    const name = getModelDisplayName(model);
+                                                    const id = typeof model.id === 'string' ? model.id : '';
+                                                    return fuzzyMatch(name, normalizedQuery) || fuzzyMatch(id, normalizedQuery);
+                                                });
+                                            return { provider, providerModels: matchingModels, matchesProvider };
+                                        })
+                                        .filter(({ matchesProvider, providerModels }) => matchesProvider || providerModels.length > 0);
+                                    
+                                     if (filteredProviders.length === 0) {
+                                         return <div className="p-3 text-center typography-meta text-muted-foreground">No models found</div>;
+                                     }
+
+                                     return (
+                                         <div className="flex flex-col">
+                                            {filteredProviders.map(({ provider, providerModels }) => (
+                                                <React.Fragment key={provider.id}>
+                                                    <div className="px-2 py-1.5 bg-muted/30 typography-micro font-semibold text-muted-foreground flex items-center gap-1.5">
+                                                        <ProviderLogo providerId={provider.id} className="size-3" />
+                                                        {provider.name}
+                                                    </div>
+                                                    {(providerModels as ProviderModel[]).map((model: ProviderModel) => {
+                                                        const isSelected = currentProviderId === provider.id && currentModelId === model.id;
+                                                        return (
+                                                            <button
+                                                                key={`${provider.id}-${model.id}`}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    tryApplyModelSelection(provider.id as string, model.id as string, currentAgentName);
+                                                                    // Don't close panel, just update selection
+                                                                }}
+                                                                className={cn(
+                                                                    "flex w-full items-center justify-between px-2 py-2 text-left hover:bg-muted/50",
+                                                                    isSelected && "bg-primary/5 text-primary"
+                                                                )}
+                                                            >
+                                                                <span className={cn("typography-meta truncate", isSelected && "font-medium")}>
+                                                                    {getModelDisplayName(model)}
+                                                                </span>
+                                                                {isSelected && <RiCheckLine className="h-4 w-4" />}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </React.Fragment>
+                                            ))}
+                                         </div>
+                                     );
+                                 })()}
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Variant Selection */}
+                    {hasVariants && (
+                        <div className="flex flex-col gap-2">
+                            <span className="typography-ui-label text-muted-foreground">Variant</span>
+                            <div className="grid grid-cols-2 gap-2">
+                                {availableVariants.map((variant) => {
+                                    const isSelected = currentVariant === variant;
+                                    return (
+                                        <button
+                                            key={variant}
+                                            type="button"
+                                            onClick={() => handleVariantSelect(variant)}
+                                            className={cn(
+                                                "px-3 py-2 rounded-lg border typography-meta font-medium transition-colors",
+                                                isSelected 
+                                                    ? "bg-primary/10 border-primary/20 text-primary" 
+                                                    : "bg-sidebar/30 border-border/40 text-muted-foreground hover:bg-sidebar/50"
+                                            )}
+                                        >
+                                            {variant}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Permissions */}
+                    <div className="flex flex-col gap-2">
+                        <span className="typography-ui-label text-muted-foreground">Permissions</span>
+                        <div className="rounded-xl border border-border/40 bg-sidebar/30 overflow-hidden">
+                             {editPermissionOptions.map((option) => {
+                                const isSelected = option.mode === effectiveEditMode;
+                                const optionColors = getEditModeColors(option.mode);
+                                return (
+                                    <button
+                                        key={option.mode}
+                                        type="button"
+                                        disabled={option.disabled || editToggleDisabled}
+                                        onClick={() => handleEditPermissionSelect(option.mode)}
+                                        className={cn(
+                                            'flex w-full items-center gap-3 px-3 py-2.5 text-left border-b border-border/40 last:border-0',
+                                            option.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted/30',
+                                            isSelected ? 'bg-primary/5' : undefined
+                                        )}
+                                    >
+                                        <span className="flex-shrink-0" style={{ color: optionColors?.text }}>
+                                            {renderEditModeIcon(option.mode, 'h-5 w-5')}
+                                        </span>
+                                        <span className={cn("typography-meta flex-1", isSelected && "font-medium")}>
+                                            {option.label}
+                                        </span>
+                                        {isSelected && <RiCheckLine className="h-4 w-4 text-primary" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -2614,17 +2841,25 @@ export const ModelControls: React.FC<ModelControlsProps> = ({ className }) => {
                         isMobile && 'overflow-hidden'
                     )}
                 >
-                    {renderVariantSelector()}
-                    {renderModelSelector()}
-                    {renderAgentSelector()}
+                    {isMobile ? renderUnifiedMobileTrigger() : (
+                        <>
+                            {renderVariantSelector()}
+                            {renderModelSelector()}
+                            {renderAgentSelector()}
+                        </>
+                    )}
                 </div>
             </div>
 
-            {renderMobileModelPanel()}
-            {renderMobileVariantPanel()}
-            {renderMobileAgentPanel()}
-            {renderMobileModelTooltip()}
-            {renderMobileAgentTooltip()}
+            {isMobile ? renderUnifiedMobilePanel() : (
+                <>
+                    {renderMobileModelPanel()}
+                    {renderMobileVariantPanel()}
+                    {renderMobileAgentPanel()}
+                    {renderMobileModelTooltip()}
+                    {renderMobileAgentTooltip()}
+                </>
+            )}
         </>
     );
 
