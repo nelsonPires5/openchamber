@@ -243,6 +243,10 @@ export function WorkingPlaceholder({
                     <Text variant="hover-enter" className="typography-ui-header text-status-error">
                         Aborted
                     </Text>
+                ) : displayedPermission ? (
+                    <span className="typography-ui-header text-[var(--status-warning)]">
+                        {displayText}
+                    </span>
                 ) : (
                     <Text variant="shine" className="typography-ui-header">
                         {displayText}
