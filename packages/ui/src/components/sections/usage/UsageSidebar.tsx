@@ -2,11 +2,14 @@ import React from 'react';
 import { ScrollableOverlay } from '@/components/ui/ScrollableOverlay';
 import { ProviderLogo } from '@/components/ui/ProviderLogo';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeviceInfo } from '@/lib/device';
 import { isVSCodeRuntime } from '@/lib/desktop';
 import { cn } from '@/lib/utils';
 import { QUOTA_PROVIDERS, resolveUsageTone } from '@/lib/quota';
 import { useQuotaStore } from '@/stores/useQuotaStore';
+import { updateDesktopSettings } from '@/lib/persistence';
 import { RiRefreshLine } from '@remixicon/react';
 
 interface UsageSidebarProps {
@@ -30,6 +33,11 @@ export const UsageSidebar: React.FC<UsageSidebarProps> = ({ onItemSelect }) => {
   const setSelectedProvider = useQuotaStore((state) => state.setSelectedProvider);
   const fetchAllQuotas = useQuotaStore((state) => state.fetchAllQuotas);
   const isLoading = useQuotaStore((state) => state.isLoading);
+  const usageAutoRefresh = useQuotaStore((state) => state.autoRefresh);
+  const usageRefreshIntervalMs = useQuotaStore((state) => state.refreshIntervalMs);
+  const setUsageAutoRefresh = useQuotaStore((state) => state.setAutoRefresh);
+  const setUsageRefreshInterval = useQuotaStore((state) => state.setRefreshInterval);
+  const loadUsageSettings = useQuotaStore((state) => state.loadSettings);
   const { isMobile } = useDeviceInfo();
 
   const [isDesktopRuntime, setIsDesktopRuntime] = React.useState<boolean>(() => {
@@ -44,6 +52,32 @@ export const UsageSidebar: React.FC<UsageSidebarProps> = ({ onItemSelect }) => {
     setIsDesktopRuntime(typeof window.opencodeDesktop !== 'undefined');
   }, []);
 
+  React.useEffect(() => {
+    void loadUsageSettings();
+  }, [loadUsageSettings]);
+
+  const persistUsageSettings = React.useCallback(async (changes: { usageAutoRefresh?: boolean; usageRefreshIntervalMs?: number }) => {
+    try {
+      await updateDesktopSettings(changes);
+    } catch (error) {
+      console.warn('Failed to save usage settings:', error);
+    }
+  }, []);
+
+  const handleUsageAutoRefreshChange = React.useCallback((enabled: boolean) => {
+    setUsageAutoRefresh(enabled);
+    void persistUsageSettings({ usageAutoRefresh: enabled });
+  }, [persistUsageSettings, setUsageAutoRefresh]);
+
+  const handleUsageRefreshIntervalChange = React.useCallback((value: string) => {
+    const next = Number(value);
+    if (!Number.isFinite(next)) {
+      return;
+    }
+    setUsageRefreshInterval(next);
+    void persistUsageSettings({ usageRefreshIntervalMs: next });
+  }, [persistUsageSettings, setUsageRefreshInterval]);
+
   const bgClass = isDesktopRuntime
     ? 'bg-transparent'
     : isVSCode
@@ -55,18 +89,39 @@ export const UsageSidebar: React.FC<UsageSidebarProps> = ({ onItemSelect }) => {
       <div className={cn('border-b px-3', isMobile ? 'mt-2 py-3' : 'py-3')}>
         <div className="flex items-center justify-between gap-2">
           <span className="typography-meta text-muted-foreground">Total {QUOTA_PROVIDERS.length}</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 -my-1 text-muted-foreground"
-            onClick={() => fetchAllQuotas()}
-            aria-label="Refresh usage"
-            title="Refresh usage"
-            disabled={isLoading}
-          >
-            <RiRefreshLine className={cn('size-4', isLoading && 'animate-spin')} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={usageAutoRefresh}
+              onCheckedChange={handleUsageAutoRefreshChange}
+              aria-label="Toggle auto refresh"
+            />
+            <Select
+              value={String(usageRefreshIntervalMs)}
+              onValueChange={handleUsageRefreshIntervalChange}
+              disabled={!usageAutoRefresh}
+            >
+              <SelectTrigger size="sm" className="min-w-[72px]">
+                <SelectValue placeholder="Interval" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30000" className="pr-2 [&>span:first-child]:hidden">30s</SelectItem>
+                <SelectItem value="60000" className="pr-2 [&>span:first-child]:hidden">1m</SelectItem>
+                <SelectItem value="300000" className="pr-2 [&>span:first-child]:hidden">5m</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 -my-1 text-muted-foreground"
+              onClick={() => fetchAllQuotas()}
+              aria-label="Refresh usage"
+              title="Refresh usage"
+              disabled={isLoading}
+            >
+              <RiRefreshLine className={cn('size-4', isLoading && 'animate-spin')} />
+            </Button>
+          </div>
         </div>
       </div>
 
