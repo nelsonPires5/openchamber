@@ -1513,11 +1513,11 @@ export const FilesView: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex min-w-0 items-center gap-1 text-left typography-ui-label font-medium"
+                    className="inline-flex min-w-0 max-w-full items-center gap-1 text-left typography-ui-label font-medium"
                     aria-label="Open files"
                   >
-                    <span className="truncate">{selectedFile.name}</span>
-                    <RiArrowDownSLine className="h-4 w-4 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate">{selectedFile.name}</span>
+                    <RiArrowDownSLine className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[16rem]">
