@@ -125,7 +125,7 @@ export const useQuotaStore = create<QuotaStore>()(
           set((state) => {
             const next = state.results.filter((entry) => entry.providerId !== providerId);
             next.push(result);
-            return { results: next };
+            return { results: next, error: null };
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to fetch quota';
@@ -141,7 +141,7 @@ export const useQuotaStore = create<QuotaStore>()(
           set((state) => {
             const next = state.results.filter((entry) => entry.providerId !== providerId);
             next.push(fallback);
-            return { results: next };
+            return { results: next, error: message };
           });
         } finally {
           set((state) => ({
