@@ -99,8 +99,9 @@ export const createVSCodeGitAPI = (): GitAPI => ({
 
   generatePullRequestDescription: async (
     directory: string,
-    payload: { base: string; head: string }
+    payload: { base: string; head: string; context?: string }
   ): Promise<GeneratedPullRequestDescription> => {
+    // VS Code: context is accepted for type compatibility but not passed through (web/desktop only feature)
     return sendBridgeMessage<GeneratedPullRequestDescription>('api:git/pr-description', {
       directory,
       base: payload.base,
