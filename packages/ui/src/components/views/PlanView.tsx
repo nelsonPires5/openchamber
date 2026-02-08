@@ -7,7 +7,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ScrollableOverlay } from '@/components/ui/ScrollableOverlay';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/stores/useUIStore';
-import { cn, getModifierLabel } from '@/lib/utils';
+
 import { getLanguageFromExtension } from '@/lib/toolHelpers';
 import { useDeviceInfo } from '@/lib/device';
 import { useThemeSystem } from '@/contexts/useThemeSystem';
@@ -86,11 +86,10 @@ export const PlanView: React.FC = () => {
   const homeDirectory = useDirectoryStore((state) => state.homeDirectory);
   const runtimeApis = useRuntimeAPIs();
   const newSessionDraftOpen = useSessionStore((state) => state.newSessionDraft?.open);
-  const { inputBarOffset, isKeyboardOpen } = useUIStore();
+  useUIStore();
   const { isMobile } = useDeviceInfo();
   const { currentTheme } = useThemeSystem();
   React.useMemo(() => generateSyntaxTheme(currentTheme), [currentTheme]);
-  const [editorView, setEditorView] = React.useState<EditorView | null>(null);
 
   // Inline comment drafts
   const addDraft = useInlineCommentDraftStore((state) => state.addDraft);
@@ -131,8 +130,6 @@ export const PlanView: React.FC = () => {
   const [lineSelection, setLineSelection] = React.useState<SelectedLineRange | null>(null);
   const [commentText, setCommentText] = React.useState('');
   const [editingDraftId, setEditingDraftId] = React.useState<string | null>(null);
-  const [pendingFocus, setPendingFocus] = React.useState(false);
-  const commentInputRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   const MD_VIEWER_MODE_KEY = 'openchamber:plan:md-viewer-mode';
 
@@ -173,23 +170,7 @@ export const PlanView: React.FC = () => {
     setLineSelection(null);
     setCommentText('');
     setEditingDraftId(null);
-    setPendingFocus(false);
   }, [content]);
-
-  React.useEffect(() => {
-    if (!pendingFocus || !lineSelection || isMobile) return;
-    if (typeof window === 'undefined') return;
-    const frame = window.requestAnimationFrame(() => {
-      const input = commentInputRef.current;
-      input?.focus();
-      if (input) {
-        const length = input.value.length;
-        input.setSelectionRange(length, length);
-      }
-      setPendingFocus(false);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [pendingFocus, lineSelection, isMobile]);
 
   React.useEffect(() => {
     if (!lineSelection) return;
@@ -218,7 +199,6 @@ export const PlanView: React.FC = () => {
       setLineSelection(null);
       setCommentText('');
       setEditingDraftId(null);
-      setPendingFocus(false);
     };
 
     const timeoutId = window.setTimeout(() => {
@@ -229,7 +209,7 @@ export const PlanView: React.FC = () => {
       window.clearTimeout(timeoutId);
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [lineSelection]);
+  }, [lineSelection, editingDraftId, isMobile]);
 
   const extractSelectedCode = React.useCallback((text: string, range: SelectedLineRange): string => {
     const lines = text.split('\n');
@@ -243,7 +223,6 @@ export const PlanView: React.FC = () => {
     setCommentText('');
     setLineSelection(null);
     setEditingDraftId(null);
-    setPendingFocus(false);
   }, []);
 
   const handleSaveComment = React.useCallback((textToSave: string, rangeOverride?: { start: number; end: number }) => {
@@ -440,7 +419,6 @@ export const PlanView: React.FC = () => {
                 setLineSelection({ start: draft.startLine, end: draft.endLine });
                 setCommentText(draft.text);
                 setEditingDraftId(draft.id);
-                setPendingFocus(true);
               }}
               onDelete={() => removeDraft(draft.sessionKey, draft.id)}
             />
@@ -479,7 +457,6 @@ export const PlanView: React.FC = () => {
     handleSaveComment,
     handleCancelComment,
     removeDraft,
-    isMobile,
   ]);
 
   return (
@@ -595,8 +572,6 @@ export const PlanView: React.FC = () => {
                         readOnly={true}
                         className="h-full [&_.cm-scroller]:pb-[var(--oc-plan-comment-pad)] [&_.cm-scroller]:relative"
                         extensions={editorExtensions}
-                        onViewReady={setEditorView}
-                        onViewDestroy={() => setEditorView(null)}
                         highlightLines={lineSelection
                           ? {
                             start: Math.min(lineSelection.start, lineSelection.end),

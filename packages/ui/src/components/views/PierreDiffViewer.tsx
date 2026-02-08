@@ -152,9 +152,8 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
   const isDark = themeContext?.themeMode === 'dark';
   const lightTheme = themeContext?.availableThemes.find(t => t.metadata.id === themeContext.lightThemeId) ?? getDefaultTheme(false);
   const darkTheme = themeContext?.availableThemes.find(t => t.metadata.id === themeContext.darkThemeId) ?? getDefaultTheme(true);
-  const themeSystem = themeContext;
-  
-  const { inputBarOffset, isKeyboardOpen } = useUIStore();
+
+  useUIStore();
   const { isMobile } = useDeviceInfo();
   
   const addDraft = useInlineCommentDraftStore((state) => state.addDraft);
@@ -171,9 +170,6 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
   const [selection, setSelection] = useState<SelectedLineRange | null>(null);
   const [commentText, setCommentText] = useState('');
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
-  const [pendingFocus, setPendingFocus] = useState(false);
-  const commentInputRef = useRef<HTMLTextAreaElement>(null);
-  const commentContainerRef = useRef<HTMLDivElement>(null);
 
   // Use a ref to track if we're currently applying a selection programmatically
   // to avoid loop with onLineSelected callback
@@ -210,7 +206,6 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
     setCommentText('');
     setSelection(null);
     setEditingDraftId(null);
-    setPendingFocus(false);
   }, []);
 
   // Helper to generate consistent annotation IDs
@@ -250,7 +245,7 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
     // Ensure full width and proper spacing
     div.className = 'w-full my-2';
     
-    const meta = (annotation as any).metadata as AnnotationData;
+    const meta = (annotation as DiffLineAnnotation<AnnotationData>).metadata;
     const id = getAnnotationId(meta);
     
     div.dataset.annotationId = id;
@@ -475,7 +470,7 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
     }
 
     return anns;
-  }, [allDrafts, getSessionKey, fileName, editingDraftId, selection, isMobile]);
+  }, [allDrafts, getSessionKey, fileName, editingDraftId, selection]);
 
   // Imperative render (like upstream OpenCode): avoids `parseDiffFromFile` on main thread.
   useEffect(() => {
@@ -609,7 +604,7 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
 
   // Render portals for inline comments with robust target resolution
   const portals = lineAnnotations.map((ann) => {
-    const meta = (ann as any).metadata as AnnotationData;
+    const meta = (ann as DiffLineAnnotation<AnnotationData>).metadata;
     const id = getAnnotationId(meta);
     
     // Use robust resolver that checks shadow, light DOM, and container
@@ -634,7 +629,6 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
             });
             setCommentText(meta.draft.text);
             setEditingDraftId(meta.draft.id);
-            setPendingFocus(true);
           }}
           onDelete={() => removeDraft(meta.draft.sessionKey, meta.draft.id)}
         />,
@@ -647,7 +641,11 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
           key={id}
           initialText={commentText}
           fileLabel={(fileName?.split('/').pop()) ?? ''}
-          lineRange={{ start: meta.draft.startLine, end: meta.draft.endLine }}
+          lineRange={{
+            start: meta.draft.startLine,
+            end: meta.draft.endLine,
+            side: meta.draft.side === 'original' ? 'deletions' : 'additions'
+          }}
           isEditing={true}
           onSave={handleSaveComment}
           onCancel={handleCancelComment}

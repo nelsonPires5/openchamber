@@ -58,7 +58,7 @@ class BlockWidget extends WidgetType {
     return other.id === this.id;
   }
   
-  destroy(dom: HTMLElement) {
+  destroy() {
     // Optional: cleanup if needed, but we might want to keep the element for React to unmount gracefully?
     // Actually, if CM destroys the DOM, React portal might complain if we don't unmount.
     // But since we render portals based on the 'blockWidgets' prop, if the widget is removed from prop, 
