@@ -185,6 +185,15 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
     if (isApplyingSelectionRef.current) {
       return;
     }
+    
+    // Mobile tap-to-extend: if selection exists and new tap is on same side, extend range
+    if (isMobile && selection && range && range.side === selection.side) {
+      const start = Math.min(selection.start, range.start);
+      const end = Math.max(selection.end, range.end);
+      setSelection({ ...range, start, end });
+      return;
+    }
+    
     setSelection(range);
     
     // Clear editing state when selection changes user-driven
@@ -195,7 +204,7 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
         setCommentText('');
       }
     }
-  }, [editingDraftId]);
+  }, [editingDraftId, isMobile, selection]);
 
   const handleCancelComment = useCallback(() => {
     setCommentText('');
@@ -447,8 +456,8 @@ export const PierreDiffViewer: React.FC<PierreDiffViewerProps> = ({
           side: side,
           metadata: { type: 'edit', draft: d },
         });
-      } else if (!isMobile) {
-        // Only show saved cards on desktop (skip on mobile for badge-only UX)
+      } else {
+        // Show saved cards on all devices
         anns.push({
           lineNumber: d.endLine,
           side: side,
