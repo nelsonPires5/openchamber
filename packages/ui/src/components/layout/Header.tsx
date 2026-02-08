@@ -231,8 +231,9 @@ export const Header: React.FC = () => {
       // Add model families if provider has per-model quotas
       if (models && Object.keys(models).length > 0) {
         const providerSelectedModels = selectedModels[provider.id] ?? [];
-        // If no models are explicitly selected, show all models
-        const hasExplicitSelections = providerSelectedModels.length > 0;
+        // hasExplicitSelection = true means user touched the selection (even if empty)
+        // hasExplicitSelection = false means no preference (key missing) → show all by default
+        const hasExplicitSelection = provider.id in selectedModels;
         const modelGroups = groupModelsByFamily(models, provider.id);
         const families = getAllModelFamilies(provider.id);
         const sortedFamilies = sortModelFamilies(families);
@@ -245,7 +246,7 @@ export const Header: React.FC = () => {
           if (modelNames.length === 0) continue;
 
           // Filter to selected models only, OR show all if nothing selected
-          const selectedModelNames = hasExplicitSelections
+          const selectedModelNames = hasExplicitSelection
             ? modelNames.filter((m: string) => providerSelectedModels.includes(m))
             : modelNames;
           if (selectedModelNames.length === 0) continue;
@@ -272,7 +273,7 @@ export const Header: React.FC = () => {
 
         // Add "Other" family for remaining models
         const otherModelNames = modelGroups.get(null) ?? [];
-        const selectedOtherModels = hasExplicitSelections
+        const selectedOtherModels = hasExplicitSelection
           ? otherModelNames.filter((m: string) => providerSelectedModels.includes(m))
           : otherModelNames;
         if (selectedOtherModels.length > 0) {
