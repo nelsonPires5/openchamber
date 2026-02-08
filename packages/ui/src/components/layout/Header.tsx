@@ -1279,6 +1279,56 @@ export const Header: React.FC = () => {
                             </div>
                           );
                         })}
+                        {/* Model families with collapsible sections */}
+                        {group.modelFamilies && group.modelFamilies.length > 0 && (
+                          <div className="px-2 py-1">
+                            {group.modelFamilies.map((family) => {
+                              const providerExpandedFamilies = expandedFamilies[group.providerId] ?? [];
+                              const isExpanded = providerExpandedFamilies.includes(family.familyId ?? 'other');
+
+                              return (
+                                <Collapsible
+                                  key={family.familyId ?? 'other'}
+                                  open={isExpanded}
+                                  onOpenChange={() => toggleFamilyExpanded(group.providerId, family.familyId ?? 'other')}
+                                >
+                                  <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left">
+                                    <span className="typography-ui-label font-medium text-foreground">
+                                      {family.familyLabel}
+                                    </span>
+                                    {isExpanded ? (
+                                      <RiArrowDownSLine className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                      <RiArrowRightSLine className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="space-y-2 pl-2">
+                                      {family.models.map(([modelName, window]) => {
+                                        const displayPercent = quotaDisplayMode === 'remaining'
+                                          ? window.remainingPercent
+                                          : window.usedPercent;
+                                        return (
+                                          <div key={`${group.providerId}-${modelName}`} className="py-1.5">
+                                            <div className="flex items-center justify-between gap-3">
+                                              <span className="truncate typography-micro text-muted-foreground">
+                                                {modelName}
+                                              </span>
+                                              <span className="typography-ui-label text-foreground tabular-nums">
+                                                {formatPercent(displayPercent) === '-' ? '' : formatPercent(displayPercent)}
+                                              </span>
+                                            </div>
+                                            <UsageProgressBar percent={displayPercent} tonePercent={window.usedPercent} className="mt-1.5 h-1" />
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              );
+                            })}
+                          </div>
+                        )}
                       </React.Fragment>
                     ))}
                   </div>
