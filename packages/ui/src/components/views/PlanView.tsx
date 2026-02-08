@@ -428,8 +428,8 @@ export const PlanView: React.FC = () => {
             />
           ),
         });
-      } else if (!isMobile) {
-        // Only show saved cards on desktop (skip on mobile for badge-only UX)
+      } else {
+        // Show saved cards on all devices
         widgets.push({
           afterLine: draft.endLine,
           id: `draft-${draft.id}`,
