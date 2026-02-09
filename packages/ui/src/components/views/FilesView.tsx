@@ -748,7 +748,7 @@ export const FilesView: React.FC = () => {
       addDraft({
         sessionKey,
         source: 'file',
-        fileLabel: selectedFile.name,
+        fileLabel: selectedFile.path,
         startLine: finalRange.start,
         endLine: finalRange.end,
         code,
@@ -1763,7 +1763,7 @@ export const FilesView: React.FC = () => {
     const sessionDrafts = allDrafts[sessionKey] ?? [];
     // Filter drafts for current file
     const fileDrafts = sessionDrafts.filter(
-      (d) => d.source === 'file' && d.fileLabel === selectedFile.name
+      (d) => d.source === 'file' && d.fileLabel === selectedFile.path
     );
 
     const widgets: BlockWidgetDef[] = [];
