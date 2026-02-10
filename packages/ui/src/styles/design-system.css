@@ -378,4 +378,25 @@
     background: rgb(from var(--agent-color-bg) r g b / 0.1);
     border-color: rgb(from var(--agent-color) r g b / 0.2);
   }
+
+  /* CodeMirror search match highlighting - using theme tokens */
+  .cm-searchMatch {
+    background-color: rgb(from var(--status-warning) r g b / 0.25) !important;
+    border-radius: 2px;
+  }
+
+  .cm-searchMatch.cm-searchMatch-selected,
+  .cm-searchMatch-selected {
+    background-color: rgb(from var(--status-warning) r g b / 0.5) !important;
+    outline: 1px solid var(--status-warning);
+    border-radius: 2px;
+  }
+
+  /* Current/active match - more prominent */
+  .cm-panel.cm-search [aria-selected="true"] .cm-searchMatch,
+  .cm-searchMatch.cm-searchMatch-active {
+    background-color: rgb(from var(--primary) r g b / 0.4) !important;
+    outline: 2px solid var(--primary);
+    border-radius: 2px;
+  }
 }
