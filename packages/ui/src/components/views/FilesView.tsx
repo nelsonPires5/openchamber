@@ -676,6 +676,8 @@ export const FilesView: React.FC = () => {
     setMainTabGuard(null);
     setDraftContent('');
     setIsSaving(false);
+    // Close search when switching files (search will reopen if user triggers it)
+    setIsSearchOpen(false);
   }, [selectedFile?.path, setMainTabGuard]);
 
   React.useEffect(() => {
@@ -1214,14 +1216,17 @@ export const FilesView: React.FC = () => {
           void saveDraft();
         }
       } else if (e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        setIsSearchOpen(true);
+        // Only open search on desktop/tablet, not on mobile
+        if (!isMobile) {
+          e.preventDefault();
+          setIsSearchOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSaving, saveDraft]);
+  }, [isSaving, saveDraft, isMobile]);
 
   const loadSelectedFile = React.useCallback(async (node: FileNode) => {
     setFileError(null);
@@ -2399,18 +2404,32 @@ export const FilesView: React.FC = () => {
           )}
 
           {!isSelectedImage && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setWrapLines(!wrapLines)}
-              className={cn(
-                'h-6 w-6 p-0 transition-opacity',
-                wrapLines ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-60 hover:opacity-100'
-              )}
-              title={wrapLines ? 'Disable line wrap' : 'Enable line wrap'}
-            >
-              <RiTextWrap className="size-4" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setWrapLines(!wrapLines)}
+                className={cn(
+                  'h-6 w-6 p-0 transition-opacity',
+                  wrapLines ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-60 hover:opacity-100'
+                )}
+                title={wrapLines ? 'Disable line wrap' : 'Enable line wrap'}
+              >
+                <RiTextWrap className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className={cn(
+                  'h-6 w-6 p-0 transition-opacity',
+                  isSearchOpen ? 'text-foreground opacity-100' : 'text-muted-foreground opacity-60 hover:opacity-100'
+                )}
+                title="Find in file"
+              >
+                <RiSearchLine className="size-4" />
+              </Button>
+            </>
           )}
 
           {(canCopy || canCopyPath || isMarkdownFile(selectedFile.path)) && (canEdit || !isSelectedImage) && (
@@ -2543,6 +2562,9 @@ export const FilesView: React.FC = () => {
                 onChange={setDraftContent}
                 extensions={editorExtensions}
                 className="h-full"
+                enableSearch
+                searchOpen={isSearchOpen}
+                onSearchOpenChange={setIsSearchOpen}
               />
             </div>
           )}
