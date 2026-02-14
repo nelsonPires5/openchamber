@@ -1994,6 +1994,8 @@ export const ModelControls: React.FC<ModelControlsProps> = ({
         // Rotate metadata in interactive desktop-style pickers (web/desktop), keep VS Code static.
         const supportsRotatingMetadata = !isVSCodeRuntime;
         const shouldAnimate = supportsRotatingMetadata && slides.length > 1 && (isHighlighted || isSelected);
+        const staticSlideIndex = !supportsRotatingMetadata && hasCapabilities && hasPrice ? 1 : 0;
+        const staticMetadataSlide = slides[staticSlideIndex];
 
         return (
             <div
@@ -2032,8 +2034,8 @@ export const ModelControls: React.FC<ModelControlsProps> = ({
                                 </TextLoop>
                             ) : (
                                 <>
-                                    {/* On non-desktop or when not highlighted/selected, show first slide (price if available, else capabilities) */}
-                                    {slides[0]}
+                                    {/* In static runtimes (VS Code), prefer capabilities over price when both exist. */}
+                                    {staticMetadataSlide}
                                 </>
                             )}
                         </div>
