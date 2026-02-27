@@ -182,6 +182,10 @@ Independent project, not affiliated with OpenCode team.
 - [David Hill](https://x.com/iamdavidhill) - who inspired me to release this without [overthinking](https://x.com/iamdavidhill/status/1993648326450020746?s=20).
 - My wife, who created a beautiful firework animation for the app while testing it for the first time.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=btriapitsyn/openchamber&type=Date)](https://star-history.com/#btriapitsyn/openchamber&type=date&legend=top-left)
+
 ## License
 
 MIT
