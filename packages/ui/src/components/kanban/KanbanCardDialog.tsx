@@ -24,14 +24,14 @@ import { getProjectDirectoryOptions } from '@/lib/worktrees/projectDirectories';
 export interface KanbanCardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: { title: string; description: string; worktreeId: string }) => void;
+  onSave: (data: { title: string; description: string; worktreeId: string }) => void | Promise<void>;
   mode: 'create' | 'edit';
   initialData?: {
     title?: string;
     description?: string;
     worktreeId?: string;
   };
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<void>;
 }
 
 export const KanbanCardDialog: React.FC<KanbanCardDialogProps> = ({
@@ -51,12 +51,14 @@ export const KanbanCardDialog: React.FC<KanbanCardDialogProps> = ({
   const [title, setTitle] = React.useState(initialData?.title ?? '');
   const [description, setDescription] = React.useState(initialData?.description ?? '');
   const [worktreeId, setWorktreeId] = React.useState(initialData?.worktreeId ?? '');
+  const [isPending, setIsPending] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
       setTitle(initialData?.title ?? '');
       setDescription(initialData?.description ?? '');
       setWorktreeId(initialData?.worktreeId ?? '');
+      setIsPending(false);
     }
   }, [open, initialData]);
 
@@ -72,19 +74,43 @@ export const KanbanCardDialog: React.FC<KanbanCardDialogProps> = ({
   const hasWorktrees = directoryOptions.length > 0;
   const isValid = title.trim().length > 0 && description.trim().length > 0 && worktreeId.trim().length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isValid) {
-      onSave({
-        title: title.trim(),
-        description: description.trim(),
-        worktreeId: worktreeId.trim(),
-      });
+    if (isValid && !isPending) {
+      setIsPending(true);
+      try {
+        await onSave({
+          title: title.trim(),
+          description: description.trim(),
+          worktreeId: worktreeId.trim(),
+        });
+      } finally {
+        setIsPending(false);
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete && !isPending) {
+      setIsPending(true);
+      try {
+        await onDelete();
+      } finally {
+        setIsPending(false);
+      }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (isPending && !nextOpen) {
+          return;
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create Card' : 'Edit Card'}</DialogTitle>
@@ -163,7 +189,8 @@ export const KanbanCardDialog: React.FC<KanbanCardDialogProps> = ({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={onDelete}
+                onClick={handleDelete}
+                disabled={isPending}
               >
                 Delete
               </Button>
@@ -172,10 +199,11 @@ export const KanbanCardDialog: React.FC<KanbanCardDialogProps> = ({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isValid || !hasWorktrees}>
+            <Button type="submit" disabled={!isValid || !hasWorktrees || isPending}>
               {mode === 'create' ? 'Create' : 'Save'}
             </Button>
           </DialogFooter>
