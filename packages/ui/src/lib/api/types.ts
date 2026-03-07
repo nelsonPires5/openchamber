@@ -1089,3 +1089,12 @@ export interface KanbanMoveCardPayload {
   toColumnId: string;
   toOrder?: number;
 }
+
+export interface KanbanUpdateColumnAutomationPayload {
+  onEnterText?: string;
+  agent?: string;
+  providerID?: string;
+  modelID?: string;
+  variant?: string;
+  onFinishMoveTo?: string;
+}
