@@ -257,6 +257,10 @@ Independent project, not affiliated with the OpenCode team.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=btriapitsyn/openchamber&type=Date)](https://star-history.com/#btriapitsyn/openchamber&type=date&legend=top-left)
+
 ## License
 
 MIT
